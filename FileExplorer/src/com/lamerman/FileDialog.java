@@ -30,6 +30,7 @@ public class FileDialog extends ListActivity {
 	public static final String START_PATH = "START_PATH";
 	public static final String RESULT_PATH = "RESULT_PATH";
 	public static final String SELECTION_MODE = "SELECTION_MODE";
+	public static final String SELECTION_TYPE = "SELECTION_TYPE";
 
 	private List<String> path = null;
 	private TextView myPath;
@@ -45,6 +46,7 @@ public class FileDialog extends ListActivity {
 	private String currentPath = ROOT;
 
 	private int selectionMode = SelectionMode.MODE_CREATE;
+	private int selectionType = SelectionMode.MODE_SELECT_FILE;
 
 	private File selectedFile;
 	private HashMap<String, Integer> lastPositions = new HashMap<String, Integer>();
@@ -89,6 +91,8 @@ public class FileDialog extends ListActivity {
 
 		selectionMode = getIntent().getIntExtra(SELECTION_MODE,
 				SelectionMode.MODE_CREATE);
+		selectionType = getIntent().getIntExtra(SELECTION_TYPE,
+				SelectionMode.MODE_SELECT_FILE);
 		if (selectionMode == SelectionMode.MODE_OPEN) {
 			newButton.setEnabled(false);
 		}
@@ -182,8 +186,11 @@ public class FileDialog extends ListActivity {
 				dirsMap.put(dirName, dirName);
 				dirsPathMap.put(dirName, file.getPath());
 			} else {
-				filesMap.put(file.getName(), file.getName());
-				filesPathMap.put(file.getName(), file.getPath());
+				if (selectionType == SelectionMode.MODE_SELECT_FILE) {
+					// Only in file mode
+					filesMap.put(file.getName(), file.getName());
+					filesPathMap.put(file.getName(), file.getPath());
+				}
 			}
 		}
 		item.addAll(dirsMap.tailMap("").values());
@@ -225,7 +232,14 @@ public class FileDialog extends ListActivity {
 		setSelectVisible(v);
 
 		if (file.isDirectory()) {
-			selectButton.setEnabled(false);
+			if (selectionType == SelectionMode.MODE_SELECT_FOLDER) {
+				// Folder mode
+				selectButton.setEnabled(true);
+				selectedFile = file;
+				v.setSelected(true);
+			} else { // File mode
+				selectButton.setEnabled(false);
+			}
 			if (file.canRead()) {
 				lastPositions.put(currentPath, position);
 				getDir(path.get(position));
@@ -246,9 +260,14 @@ public class FileDialog extends ListActivity {
 								}).show();
 			}
 		} else {
-			selectedFile = file;
-			v.setSelected(true);
-			selectButton.setEnabled(true);
+			if (selectionType == SelectionMode.MODE_SELECT_FOLDER) {
+				// Folder mode
+				selectButton.setEnabled(false);
+			} else {
+				selectedFile = file;
+				v.setSelected(true);
+				selectButton.setEnabled(true);
+			}
 		}
 	}
 
